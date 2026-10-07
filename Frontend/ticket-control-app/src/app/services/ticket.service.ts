@@ -7,7 +7,7 @@ import { Ticket, CreateTicketDto, ChangeStatusDto, TicketHistory } from '../mode
   providedIn: 'root'
 })
 export class TicketService {
- 
+
   private apiUrl = 'http://localhost:5133/api/tickets';
 
   constructor(private http: HttpClient) {}
@@ -20,8 +20,14 @@ export class TicketService {
     return this.http.get<Ticket>(`${this.apiUrl}/${id}`);
   }
 
-  createTicket(dto: CreateTicketDto): Observable<Ticket> {
-    return this.http.post<Ticket>(this.apiUrl, dto);
+  createTicket(ticketData: { title: string; equipment: string; description?: string }): Observable<Ticket> {
+    const payload = {
+      title: ticketData.title,
+      equipment: ticketData.equipment, 
+      description: ticketData.description || ''
+    };
+
+    return this.http.post<Ticket>(this.apiUrl, payload);
   }
 
   changeStatus(id: number, dto: ChangeStatusDto): Observable<Ticket> {
