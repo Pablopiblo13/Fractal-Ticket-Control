@@ -12,5 +12,22 @@
     <PackageReference Include="MySqlConnector" Version="2.6.2" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
+  <!-- Script para compilar Angular automáticamente durante el Build de .NET -->
+ <!-- Script para compilar Angular automáticamente durante el Build de .NET -->
+  <Target Name="PublishRunWebpack" AfterTargets="ComputeFilesToPublish">
+    <!-- Entra a la carpeta de Angular, instala dependencias y compila para producción -->
+    <Exec WorkingDirectory="..\..\Frontend\ticket-control-app" Command="npm install" />
+    <Exec WorkingDirectory="..\..\Frontend\ticket-control-app" Command="npm run build -- --configuration production" />
+    
+    <!-- Copia los archivos generados por Angular 17 a la carpeta wwwroot de .NET -->
+    <ItemGroup>
+      <DistFiles Include="..\..\Frontend\ticket-control-app\dist\ticket-control-app\browser\**" />
+      <ResolvedFileToPublish Include="@(DistFiles->'%(FullPath)')" Exclude="@(ResolvedFileToPublish)">
+        <RelativePath>wwwroot\%(RecursiveDir)%(Filename)%(Extension)</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
 
 </Project>

@@ -8,8 +8,8 @@ import { Ticket, CreateTicketDto, ChangeStatusDto, TicketHistory } from '../mode
 })
 export class TicketService {
 
-  // URL del Backend desplegado en Railway
-  private apiUrl = 'https://fractal-ticket-control-production.up.railway.app/api/tickets';
+
+  private apiUrl = '/api/tickets';
 
   constructor(private http: HttpClient) {}
 
