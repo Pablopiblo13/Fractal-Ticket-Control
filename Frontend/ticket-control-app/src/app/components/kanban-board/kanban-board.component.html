@@ -1,0 +1,279 @@
+<!-- HEADER SUPERIOR -->
+<header class="app-header bg-white border-bottom px-4 py-3 d-flex align-items-center justify-content-between">
+  <!-- Sección Izquierda: Logo y Módulo -->
+  <div class="d-flex align-items-center gap-3">
+    <div class="brand-logo fw-bold text-primary fs-4 d-flex align-items-center">
+      <span style="color: #007bff; font-weight: 800; letter-spacing: 1px;">FRAC</span>
+      <span style="color: #ffc107; font-weight: 800;">T</span>
+      <span style="color: #007bff; font-weight: 800; letter-spacing: 1px;">AL</span>
+    </div>
+    <div class="vr bg-secondary opacity-25 mx-2" style="height: 24px;"></div>
+    <span class="fw-bold text-dark fs-6" style="color: #1a4971 !important;">Mantenimiento · Tickets</span>
+  </div>
+
+  <!-- Sección Derecha: Usuario/Rol -->
+  <div class="d-flex align-items-center gap-2">
+    <span class="text-secondary small fw-semibold">Operador</span>
+    <div class="user-avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold" 
+         style="width: 36px; height: 36px; font-size: 0.85rem;">
+      OP
+    </div>
+  </div>
+</header>
+
+<!-- CONTENIDO PRINCIPAL DEL TABLERO -->
+<div class="container-fluid p-4">
+
+  <!-- BARRA DE FILTROS -->
+  <div class="card border-0 shadow-sm p-3 mb-4 bg-white">
+    <div class="row g-3 align-items-end">
+      
+      <!-- Búsqueda por Nombre / Equipo -->
+      <div class="col-md-5">
+        <label class="form-label text-muted small fw-bold">Buscar por Nombre o Código de Equipo</label>
+        <div class="input-group">
+          <span class="input-group-text bg-light border-end-0">🔍</span>
+          <input 
+            type="text" 
+            class="form-control border-start-0" 
+            [(ngModel)]="filters.searchText" 
+            placeholder="Ej. Cajero, ATM-0451...">
+        </div>
+      </div>
+
+      <!-- Fecha Desde -->
+      <div class="col-md-3">
+        <label class="form-label text-muted small fw-bold">Fecha Desde</label>
+        <input 
+          type="date" 
+          class="form-control" 
+          [(ngModel)]="filters.startDate">
+      </div>
+
+      <!-- Fecha Hasta -->
+      <div class="col-md-3">
+        <label class="form-label text-muted small fw-bold">Fecha Hasta</label>
+        <input 
+          type="date" 
+          class="form-control" 
+          [(ngModel)]="filters.endDate">
+      </div>
+
+      <!-- Botón Limpiar -->
+      <div class="col-md-1 text-end">
+        <button 
+          type="button" 
+          class="btn btn-outline-secondary w-100" 
+          (click)="clearFilters()" 
+          title="Limpiar filtros">
+          Limpiar
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="row g-3">
+    
+    <!-- Formulario Nuevo Ticket -->
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm p-3 h-100">
+        <h5 class="fw-bold mb-3 text-primary">Nuevo ticket</h5>
+        
+        <form (ngSubmit)="onCreateTicket()">
+          <div class="mb-3">
+            <label class="form-label text-muted small fw-bold">Título</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              [(ngModel)]="newTicket.title" 
+              name="title" 
+              placeholder="Ej. Cajero fuera de servicio" 
+              required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label text-muted small fw-bold">Equipo / Activo</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              [(ngModel)]="newTicket.asset" 
+              name="asset" 
+              placeholder="Ej. ATM-0451" 
+              required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label text-muted small fw-bold">Descripción</label>
+            <textarea 
+              class="form-control" 
+              rows="3" 
+              [(ngModel)]="newTicket.description" 
+              name="description" 
+              placeholder="Pantalla sin respuesta..."></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-warning text-white w-100 fw-bold py-2">
+            Crear ticket
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Contenedor Kanban -->
+    <div class="col-md-9">
+      <div class="row g-3" cdkDropListGroup>
+        
+        <!-- Pendientes -->
+        <div class="col-md-4">
+          <div class="card bg-light border-0 shadow-sm p-3">
+            <h5 class="card-title text-danger mb-3 fw-bold d-flex justify-content-between align-items-center">
+              <span>Pendiente</span>
+              <span class="badge bg-danger rounded-pill">{{ filteredPendingTickets.length }}</span>
+            </h5>
+            
+            <div 
+              id="pending-list"
+              cdkDropList 
+              [cdkDropListData]="pendingTickets" 
+              (cdkDropListDropped)="onDrop($event)"
+              class="kanban-list" 
+              style="min-height: 450px;">
+              
+              <div *ngFor="let ticket of filteredPendingTickets" cdkDrag class="mb-3">
+                <app-ticket-card 
+                  [ticket]="ticket" 
+                  (cardClick)="onTicketClick($event)">
+                </app-ticket-card>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- En Proceso -->
+        <div class="col-md-4">
+          <div class="card bg-light border-0 shadow-sm p-3">
+            <h5 class="card-title text-warning mb-3 fw-bold d-flex justify-content-between align-items-center">
+              <span>En Proceso</span>
+              <span class="badge bg-warning text-dark rounded-pill">{{ filteredInProgressTickets.length }}</span>
+            </h5>
+            
+            <div 
+              id="progress-list"
+              cdkDropList 
+              [cdkDropListData]="inProgressTickets" 
+              (cdkDropListDropped)="onDrop($event)"
+              class="kanban-list" 
+              style="min-height: 450px;">
+              
+              <div *ngFor="let ticket of filteredInProgressTickets" cdkDrag class="mb-3">
+                <app-ticket-card 
+                  [ticket]="ticket" 
+                  (cardClick)="onTicketClick($event)">
+                </app-ticket-card>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Resueltos -->
+        <div class="col-md-4">
+          <div class="card bg-light border-0 shadow-sm p-3">
+            <h5 class="card-title text-success mb-3 fw-bold d-flex justify-content-between align-items-center">
+              <span>Resuelto</span>
+              <span class="badge bg-success rounded-pill">{{ filteredResolvedTickets.length }}</span>
+            </h5>
+            
+            <div 
+              id="resolved-list"
+              cdkDropList 
+              [cdkDropListData]="resolvedTickets" 
+              (cdkDropListDropped)="onDrop($event)"
+              class="kanban-list" 
+              style="min-height: 450px;">
+              
+              <div *ngFor="let ticket of filteredResolvedTickets" cdkDrag class="mb-3">
+                <app-ticket-card 
+                  [ticket]="ticket" 
+                  (cardClick)="onTicketClick($event)">
+                </app-ticket-card>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Modal de Cambio de Estado -->
+  <div class="modal-backdrop" *ngIf="isModalOpen">
+    <div class="modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Cambio de estado del ticket</h5>
+          <button type="button" class="btn-close" (click)="closeModal()"></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label font-weight-bold">Ticket:</label>
+            <input type="text" class="form-control" [value]="selectedTicketForStatus?.title" readonly>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label font-weight-bold">Persona encargada <span class="text-danger">*</span></label>
+            <select class="form-select" [(ngModel)]="statusForm.assignedTo">
+              <option value="">-- Seleccionar encargado --</option>
+              <option value="Juan Pérez">Juan Pérez</option>
+              <option value="María Gómez">María Gómez</option>
+              <option value="Carlos López">Carlos López</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label font-weight-bold">
+              {{ isResolvedStatus() ? '¿Cómo se resolvió el ticket?' : 'Descripción del cambio' }}
+              <span class="text-danger" *ngIf="isResolvedStatus()">*</span>
+            </label>
+            <textarea 
+              class="form-control" 
+              rows="3" 
+              [(ngModel)]="statusForm.comment"
+              [placeholder]="isResolvedStatus() ? 'Detalla la solución aplicada...' : 'Comentario opcional...'">
+            </textarea>
+          </div>
+
+          <div class="mb-3" *ngIf="isResolvedStatus()">
+            <label class="form-label font-weight-bold">Evidencia (Foto o Documento) <span class="text-danger">*</span></label>
+            <input type="file" class="form-control" (change)="onFileSelected($event)" accept="image/*,.pdf,.doc,.docx">
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancelar</button>
+          <button type="button" class="btn btn-primary" (click)="confirmStatusChange()">Guardar Cambio</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Alerta de Validación Centrado -->
+  <div class="modal-backdrop" *ngIf="showValidationAlert">
+    <div class="modal-dialog-centered">
+      <div class="modal-content text-center p-4">
+        <div class="mb-3" style="font-size: 3rem;">
+          ❌
+        </div>
+        <h5 class="fw-bold mb-3">{{ validationAlertMessage }}</h5>
+        <div class="d-flex justify-content-center mt-2">
+          <button type="button" class="btn btn-danger px-4 py-2 fw-bold" (click)="closeValidationAlert()">
+            Aceptar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

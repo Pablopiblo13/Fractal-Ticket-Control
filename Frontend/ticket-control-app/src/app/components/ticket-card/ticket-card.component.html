@@ -1,0 +1,11 @@
+<div class="ticket-card" *ngIf="ticket" (click)="onClick()">
+  <div class="card-header">
+    <span class="ticket-id">#{{ ticket.id }}</span>
+    <span class="badge" [ngClass]="getStatusBadgeClass(ticket.status)">
+      {{ ticket.status }}
+    </span>
+  </div>
+  <h4 class="ticket-title">{{ ticket.title }}</h4>
+  <p class="ticket-equipment"><strong>Equipo:</strong> {{ ticket.equipment }}</p>
+  <p class="ticket-date">{{ ticket.createdAt | date:'short' }}</p>
+</div>
