@@ -1,4 +1,4 @@
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:5133/api'
+  apiUrl: 'glistening-tranquility-production-323a.up.railway.app'
 };
