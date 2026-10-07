@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fractal - Maintenance Tickets</title>
+  <style>
+    :root {
+      --primary: #f59e0b;
+      --bg-main: #f3f4f6;
+      --card-bg: #ffffff;
+      --text-dark: #1f2937;
+    }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-main); margin: 0; padding: 20px; }
+    header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 30px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .container { display: grid; grid-template-columns: 320px 1fr; gap: 20px; }
+    .form-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; font-weight: 600; margin-bottom: 5px; color: var(--text-dark); }
+    .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; }
+    .btn-submit { background: var(--primary); color: white; border: none; width: 100%; padding: 12px; font-weight: bold; border-radius: 6px; cursor: pointer; }
+    .board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+    .column { background: #ebedf0; padding: 15px; border-radius: 8px; min-height: 500px; }
+    .column-title { font-weight: bold; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #ccc; }
+    .ticket-card { background: white; padding: 15px; border-radius: 6px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .ticket-id { font-size: 0.85em; color: #6b7280; font-weight: bold; }
+    .ticket-title { font-weight: 600; margin: 5px 0; }
+    .ticket-badge { display: inline-block; background: #e5e7eb; padding: 3px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <header>
+    <h2>FRACTAL | Maintenance Tickets</h2>
+    <div>Operator: <strong>OP-01</strong></div>
+  </header>
+
+  <div class="container">
+    <!-- Form Side -->
+    <div class="form-card">
+      <h3>New Ticket</h3>
+      <div class="form-group">
+        <label>Title</label>
+        <input type="text" placeholder="e.g. ATM Out of Service">
+      </div>
+      <div class="form-group">
+        <label>Equipment / Asset</label>
+        <input type="text" placeholder="e.g. ATM-0451">
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea rows="4" placeholder="Screen not responding..."></textarea>
+      </div>
+      <button class="btn-submit">Create Ticket</button>
+    </div>
+
+    <!-- Kanban Board -->
+    <div class="board">
+      <div class="column">
+        <div class="column-title" style="color: #d97706;">Pending</div>
+        <div class="ticket-card">
+          <div class="ticket-id">#1042</div>
+          <div class="ticket-title">Cajero fuera de servicio</div>
+          <span class="ticket-badge">ATM-0451</span>
+        </div>
+      </div>
+      <div class="column">
+        <div class="column-title" style="color: #2563eb;">In Progress</div>
+        <div class="ticket-card">
+          <div class="ticket-id">#1039</div>
+          <div class="ticket-title">UPS con alarma</div>
+          <span class="ticket-badge">SEDE-ARE</span>
+        </div>
+      </div>
+      <div class="column">
+        <div class="column-title" style="color: #16a34a;">Resolved</div>
+        <div class="ticket-card">
+          <div class="ticket-id">#1031</div>
+          <div class="ticket-title">Cambio de lector de tarjeta</div>
+          <span class="ticket-badge">ATM-0210</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
