@@ -1,15 +1,22 @@
 # 🎫 FRAC·T·AL Ticket Control — Kanban Ticket Management System
 
-An end-to-end, full-stack maintenance ticket management system built with **Angular 17**, **.NET 8 Web API**, and **MySQL**. Featuring an interactive Kanban board with Drag & Drop functionality, status transitions with mandatory evidence validation, real-time filtering, custom error alert modals, and institutional branding.
+An end-to-end, full-stack maintenance ticket management system built with **Angular 17**, **.NET 8 Web API**, and **MySQL**. Featuring an interactive Kanban board with Drag & Drop functionality, status transitions with mandatory evidence validation, real-time filtering, custom error alert modals, institutional branding, and fully deployed in production on **Railway**.
+
+---
+
+## 🌐 Live Demo / Production URL
+- **Frontend App**: [https://fractal-ticket-control-production.up.railway.app](https://fractal-ticket-control-production.up.railway.app)
+- **Backend API**: [https://glistening-tranquility-production-323a.up.railway.app](https://glistening-tranquility-production-323a.up.railway.app)
 
 ---
 
 ## 📑 Table of Contents
 - [Features](#-features)
 - [Tech Stack](#-tech-stack)
+- [System Architecture & Cloud Deployment](#-system-architecture--cloud-deployment)
 - [System Architecture & Diagrams](#-system-architecture--diagrams)
 - [Database Setup](#-database-setup)
-- [Getting Started](#-getting-started)
+- [Getting Started (Local Development)](#-getting-started-local-development)
   - [Prerequisites](#prerequisites)
   - [Backend Setup (.NET 8)](#backend-setup-net-8)
   - [Frontend Setup (Angular 17)](#frontend-setup-angular-17)
@@ -31,18 +38,28 @@ An end-to-end, full-stack maintenance ticket management system built with **Angu
 
 ## 🛠️ Tech Stack
 
-| Layer | Technology |
+| Layer | Technology & Cloud Services |
 | :--- | :--- |
-| **Frontend** | Angular 17, TypeScript, Angular CDK (Drag & Drop), Bootstrap 5, RxJS |
-| **Backend** | .NET 8 Web API, Entity Framework Core / Dapper, C# |
-| **Database** | MySQL 8.0 (Stored Procedures & History Logs) |
+| **Frontend** | Angular 17, TypeScript, Angular CDK (Drag & Drop), Bootstrap 5, RxJS (Hosted on **Railway**) |
+| **Backend** | .NET 8 Web API, Entity Framework Core, C# (Hosted on **Railway**) |
+| **Database** | MySQL 8.0, Stored Procedures & History Logs (Hosted on **Railway Database Service**) |
 | **Version Control**| Git, GitHub (Git Flow branching) |
+
+---
+
+## ☁️ System Architecture & Cloud Deployment
+
+The application is structured in a **decoupled architecture**, distributed across three independent services managed within **Railway**:
+
+1. **Frontend Service**: Serves the optimized production build of Angular using `npx serve` on port `8080`. Communicates directly with the cloud backend via configured environment variables (`environment.ts`).
+2. **Backend Service**: A containerized .NET 8 Web API exposing REST endpoints, configured with CORS policies (`AllowAngular`) to safely accept requests exclusively from the frontend domain.
+3. **MySQL Service**: A cloud-managed relational database storing operational tables and handling high-performance transactions via stored procedures.
 
 ---
 
 ## 📐 System Architecture & Diagrams
 
-## 1. Diagrama Entidad-Relación (ERD) Actualizado
+### 1. Diagrama Entidad-Relación (ERD) Actualizado
 
 ```mermaid
 erDiagram
@@ -70,11 +87,8 @@ erDiagram
         string EvidencePath
         datetime CreatedAt
     }
-```
-
-## 2. Diagrama de Secuencia - Flujo de Creación de Tickets y Alerta de Validación
-
-```mermaid
+2. Diagrama de Secuencia - Flujo de Creación de Tickets y Alerta de Validación
+Fragmento de código
 sequenceDiagram
     autonumber
 
@@ -94,11 +108,8 @@ sequenceDiagram
         API-->>Frontend: 201 Created (Datos del Ticket)
         Frontend-->>Operador: Agrega tarjeta a la columna PENDIENTE
     end
-```
-
-## 3. Diagrama de Secuencia - Transición de Estado (Drag & Drop, Asignación y Evidencia)
-
-```mermaid
+3. Diagrama de Secuencia - Transición de Estado (Drag & Drop, Asignación y Evidencia)
+Fragmento de código
 sequenceDiagram
     autonumber
 
@@ -134,46 +145,33 @@ sequenceDiagram
             Frontend-->>Operador: Muestra alerta de error
         end
     end
-```
-
-## 4. Diagrama de Componentes de la Arquitectura (Vista General)
-
-```mermaid
+4. Diagrama de Componentes de la Arquitectura (Vista General Cloud)
+Fragmento de código
 graph TD
-    subgraph Frontend["Angular 17 + Bootstrap + CDK"]
-        UI["Header + Kanban Board"]
-        Filter["Filtro por Nombre / Activo / Fechas"]
-        DragDrop["Angular CDK Drag & Drop"]
-        Modals["Modal de Cambio de Estado / Alerta"]
+    subgraph CloudRailway["Railway Cloud Platform"]
+        subgraph Frontend["Frontend Service (Angular 17)"]
+            UI["Header + Kanban Board"]
+            DragDrop["Angular CDK Drag & Drop"]
+        end
+
+        subgraph Backend[".NET 8 Web API Service"]
+            Controller["TicketsController"]
+            CORS["CORS Policy (AllowAngular)"]
+        end
+
+        subgraph Database["MySQL Database Service"]
+            Tables[("TICKETS & TICKET_HISTORIES")]
+            SP1["sp_CreateTicket"]
+            SP2["sp_ChangeTicketStatus"]
+        end
     end
 
-    subgraph Backend[".NET 8 Web API"]
-        Controller["TicketsController"]
-        Service["TicketService / DTOs"]
-        Upload["File Storage Service"]
-    end
-
-    subgraph Database["MySQL Server"]
-        Tables[("TICKETS & TICKET_HISTORIES")]
-        SP1["sp_CreateTicket"]
-        SP2["sp_ChangeTicketStatus"]
-    end
-
-    UI --> Filter
-    UI --> DragDrop
-    DragDrop --> Modals
-
-    Modals --> Controller
-    Controller --> Service
-
-    Service --> Upload
-    Service --> SP1
-    Service --> SP2
-
+    UI -->|HTTPS / REST API| CORS
+    CORS --> Controller
+    Controller --> SP1
+    Controller --> SP2
     SP1 --> Tables
     SP2 --> Tables
-```
-
 🗄️ Database Setup
 Run the MySQL scripts located in the /database folder to generate tables and stored procedures:
 
@@ -218,8 +216,7 @@ BEGIN
     VALUES (p_TicketId, v_OldStatus, p_NewStatus, p_AssignedTo, p_Comment, p_EvidencePath, NOW());
 END //
 DELIMITER ;
-
-🚦 Getting Started
+🚦 Getting Started (Local Development)
 Prerequisites
 Node.js (v18 or higher)
 
@@ -227,7 +224,7 @@ Angular CLI (npm install -g @angular/cli)
 
 .NET 8 SDK
 
-[suspicious link removed]
+MySQL Server 8.0
 
 Backend Setup (.NET 8)
 Clone the repository:
@@ -246,8 +243,6 @@ Restore dependencies and run the API:
 Bash
 dotnet restore
 dotnet run
-The API will start at https://localhost:7001 or http://localhost:5000.
-
 Frontend Setup (Angular 17)
 Navigate to the frontend directory:
 
@@ -266,13 +261,11 @@ Open your browser and navigate to http://localhost:4200/.
 🌿 Branching Strategy
 This project follows Git Flow:
 
-main: Production-ready code.
+main: Production-ready code deployed automatically to Railway.
 
 develop: Integration branch for features.
 
-feature/*: Specific topic branches (feature/database-schema, feature/backend-api, feature/frontend-angular, feature/add-ticket-form).
-
-docs/*: Documentation updates (docs/update-architecture-readme).
+feature/*: Specific topic branches.
 
 📄 License
 Distributed under the MIT License. See LICENSE for more information.
