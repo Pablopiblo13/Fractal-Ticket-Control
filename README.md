@@ -2,7 +2,7 @@
 
 An end-to-end, full-stack maintenance ticket management system built with **Angular 17**, **.NET 8 Web API**, and **MySQL**.
 
-Featuring an interactive Kanban board with Drag & Drop functionality, status transitions with mandatory evidence validation, real-time filtering, custom error alert modals, institutional branding, and full production deployment on **Railway**.
+The system features an interactive Kanban board with Drag & Drop functionality, status transitions with mandatory evidence validation, real-time filtering, custom error alert modals, institutional branding, and full production deployment on **Railway**.
 
 ---
 
@@ -39,7 +39,7 @@ Featuring an interactive Kanban board with Drag & Drop functionality, status tra
 
 * 📋 **Interactive Kanban Board:** Dynamic ticket management across three columns: `Pending`, `In Progress`, and `Resolved`, powered by Angular CDK Drag & Drop.
 
-* 🖼️ **Evidence & Assignment Enforcement:** Mandatory assignment of a responsible person when changing the ticket status, with resolution evidence required when closing tickets as `Resolved`.
+* 🖼️ **Evidence & Assignment Enforcement:** A responsible person must be assigned whenever the ticket status changes. Resolution evidence is required when closing tickets as `Resolved`.
 
 * 🔍 **Real-Time Multi-Filter Search:** Dynamically filter tickets by:
 
@@ -136,21 +136,21 @@ sequenceDiagram
 
     autonumber
 
-    actor Operador
+    actor Operator
     participant Frontend as Angular App (Kanban)
     participant API as .NET Web API
     participant DB as MySQL Database
 
-    Operador->>Frontend: Diligencia el formulario y presiona "Crear ticket"
+    Operator->>Frontend: Fills out the form and clicks "Create Ticket"
 
-    alt Campos incompletos
-        Frontend-->>Operador: Muestra Modal de Alerta Centrado
-    else Formulario completo
+    alt Required fields are incomplete
+        Frontend-->>Operator: Displays centered alert modal
+    else Form is complete
         Frontend->>API: POST /api/tickets (Title, Asset, Description)
         API->>DB: CALL sp_CreateTicket(Title, Asset, Description)
-        DB-->>API: Retorna ID del nuevo Ticket
-        API-->>Frontend: 201 Created (Datos del Ticket)
-        Frontend-->>Operador: Agrega tarjeta a la columna PENDIENTE
+        DB-->>API: Returns new Ticket ID
+        API-->>Frontend: 201 Created (Ticket data)
+        Frontend-->>Operator: Adds ticket card to PENDING column
     end
 ```
 
@@ -163,37 +163,37 @@ sequenceDiagram
 
     autonumber
 
-    actor Operador
+    actor Operator
     participant Frontend as Angular App
     participant API as .NET Web API
     participant DB as MySQL Database
 
-    Operador->>Frontend: Arrastra tarjeta a nueva columna
-    Frontend-->>Operador: Abre Modal de Cambio de Estado
+    Operator->>Frontend: Drags ticket to a new column
+    Frontend-->>Operator: Opens status change modal
 
-    Operador->>Frontend: Selecciona encargado y escribe comentario
+    Operator->>Frontend: Selects assignee and enters a comment
 
-    alt Estado es RESOLVED
-        Operador->>Frontend: Adjunta archivo de evidencia
+    alt Status is RESOLVED
+        Operator->>Frontend: Attaches evidence file
     end
 
-    Operador->>Frontend: Presiona "Guardar Cambio"
+    Operator->>Frontend: Clicks "Save Change"
 
-    alt Validación fallida
-        Frontend-->>Operador: Muestra Modal de Alerta
-    else Validación exitosa
+    alt Validation failed
+        Frontend-->>Operator: Displays validation error modal
+    else Validation successful
 
         Frontend->>API: PUT /api/tickets/{id}/status
         API->>DB: CALL sp_ChangeTicketStatus()
 
-        alt Transacción completada
-            DB-->>API: Confirmación de actualización e historial
+        alt Database transaction completed
+            DB-->>API: Confirms update and history record
             API-->>Frontend: 200 OK
-            Frontend-->>Operador: Actualiza tablero Kanban
-        else Error en Base de Datos
+            Frontend-->>Operator: Updates Kanban board
+        else Database error
             DB-->>API: SQL Error
             API-->>Frontend: 400 Bad Request
-            Frontend-->>Operador: Muestra alerta de error
+            Frontend-->>Operator: Displays error alert
         end
 
     end
@@ -240,7 +240,7 @@ graph TD
 
 # 🗄️ Database Setup
 
-Run the MySQL scripts located in the `/database` folder to generate the required tables and stored procedures.
+Run the MySQL scripts located in the `/database` folder to create the required tables and stored procedures.
 
 ## 1. Create Stored Procedure: Create Ticket
 
@@ -359,7 +359,7 @@ npm install -g @angular/cli
 
 ## ⚙️ Backend Setup (.NET 8)
 
-### 1. Clone the repository
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/Pablopiblo13/fractal-ticket-control.git
@@ -371,7 +371,7 @@ Navigate to the backend directory:
 cd fractal-ticket-control/backend
 ```
 
-### 2. Configure the MySQL connection
+### 2. Configure the MySQL Connection
 
 Open the `appsettings.json` file and configure your MySQL connection string:
 
@@ -385,7 +385,7 @@ Open the `appsettings.json` file and configure your MySQL connection string:
 
 > Replace `yourpassword` with your local MySQL password.
 
-### 3. Restore dependencies
+### 3. Restore Dependencies
 
 ```bash
 dotnet restore
@@ -409,19 +409,19 @@ Open a new terminal and navigate to the frontend directory:
 cd ../frontend
 ```
 
-### 1. Install dependencies
+### 1. Install Dependencies
 
 ```bash
 npm install
 ```
 
-### 2. Start the development server
+### 2. Start the Development Server
 
 ```bash
 ng serve
 ```
 
-### 3. Open the application
+### 3. Open the Application
 
 Once the Angular development server is running, open your browser and navigate to:
 
