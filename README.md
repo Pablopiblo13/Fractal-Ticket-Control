@@ -184,6 +184,8 @@ graph TD
     Controller --> SP2
     SP1 --> Tables
     SP2 --> Tables
+```mermaid
+
 
 ## 🗄️ Database Setup
 
