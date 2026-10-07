@@ -1,15 +1,19 @@
 using TicketControl.Api.Repositories;
-using Microsoft.Extensions.FileProviders;
+using Microsoft.EntityFrameworkCore;
+using TicketControl.Api.Data;
+
 var builder = WebApplication.CreateBuilder(args);
 
+
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+builder.Services.AddDbContext<TicketControlContext>(options =>
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-
 builder.Services.AddScoped<ITicketRepository, TicketRepository>();
-
 
 builder.Services.AddCors(options =>
 {
@@ -39,7 +43,6 @@ app.UseAuthorization();
 app.UseStaticFiles();
 
 app.MapControllers();
-
 
 app.MapFallbackToFile("index.html");
 

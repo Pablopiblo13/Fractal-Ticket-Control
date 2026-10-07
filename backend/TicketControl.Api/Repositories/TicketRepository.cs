@@ -20,14 +20,14 @@ public class TicketRepository : ITicketRepository
     public async Task<IEnumerable<Ticket>> GetAllAsync()
     {
         using var connection = CreateConnection();
-        string sql = "SELECT * FROM Tickets ORDER BY Id DESC;";
+        string sql = "SELECT * FROM tickets ORDER BY Id DESC;";
         return await connection.QueryAsync<Ticket>(sql);
     }
 
     public async Task<Ticket?> GetByIdAsync(int id)
     {
         using var connection = CreateConnection();
-        string sql = "SELECT * FROM Tickets WHERE Id = @Id;";
+        string sql = "SELECT * FROM tickets WHERE Id = @Id;";
         return await connection.QuerySingleOrDefaultAsync<Ticket>(sql, new { Id = id });
     }
 
@@ -59,7 +59,7 @@ public class TicketRepository : ITicketRepository
     public async Task<IEnumerable<TicketHistory>> GetHistoryByTicketIdAsync(int ticketId)
     {
         using var connection = CreateConnection();
-        string sql = "SELECT * FROM TicketHistories WHERE TicketId = @TicketId ORDER BY CreatedAt DESC;";
+        string sql = "SELECT * FROM ticket_history WHERE TicketId = @TicketId ORDER BY CreatedAt DESC;";
         return await connection.QueryAsync<TicketHistory>(sql, new { TicketId = ticketId });
     }
 }
