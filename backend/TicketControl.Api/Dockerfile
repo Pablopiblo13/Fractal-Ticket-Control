@@ -1,5 +1,5 @@
 # Etapa 1: Construir el Frontend de Angular
-FROM node:18-alpine AS build-frontend
+FROM node:22-alpine AS build-frontend
 WORKDIR /app/frontend
 COPY Frontend/ticket-control-app/package*.json ./
 RUN npm install
