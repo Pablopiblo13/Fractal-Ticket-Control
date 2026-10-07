@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CdkDragDrop, DragDropModule, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { TicketService } from '../../services/ticket.service';
@@ -17,47 +17,55 @@ export class KanbanBoardComponent implements OnInit {
   inProgressTickets: Ticket[] = [];
   resolvedTickets: Ticket[] = [];
 
-  constructor(private ticketService: TicketService) {}
+  constructor(
+    private ticketService: TicketService,
+    private cdr: ChangeDetectorRef // Inyectamos ChangeDetectorRef para forzar la actualización de la vista
+  ) {}
 
   ngOnInit(): void {
     this.loadTickets();
   }
 
-loadTickets(): void {
-  this.ticketService.getTickets().subscribe({
-    next: (data) => {
-      console.log('--- DATOS RECIBIDOS DE LA API ---', data);
+  loadTickets(): void {
+    this.ticketService.getTickets().subscribe({
+      next: (data) => {
+        console.log('--- DATOS RECIBIDOS DE LA API ---', data);
 
-      this.pendingTickets = data.filter(t => {
-        const status = (t.status || (t as any).Status || '').toString().toUpperCase();
-        return status === 'PENDING' || status === 'PENDIENTE';
-      });
+        this.pendingTickets = data.filter(t => {
+          const rawStatus = t.status !== undefined && t.status !== null ? t.status : (t as any).Status;
+          const statusStr = rawStatus.toString().toUpperCase();
+          return statusStr === 'PENDING' || statusStr === 'PENDIENTE' || rawStatus === 0;
+        });
 
-      this.inProgressTickets = data.filter(t => {
-        const status = (t.status || (t as any).Status || '').toString().toUpperCase();
-        return status === 'IN_PROGRESS' || status === 'INPROGRESS' || status === 'EN PROCESO';
-      });
+        this.inProgressTickets = data.filter(t => {
+          const rawStatus = t.status !== undefined && t.status !== null ? t.status : (t as any).Status;
+          const statusStr = rawStatus.toString().toUpperCase();
+          return statusStr === 'IN_PROGRESS' || statusStr === 'INPROGRESS' || statusStr === 'EN PROCESO' || rawStatus === 1;
+        });
 
-      this.resolvedTickets = data.filter(t => {
-        const status = (t.status || (t as any).Status || '').toString().toUpperCase();
-        return status === 'RESOLVED' || status === 'RESUELTO';
-      });
+        this.resolvedTickets = data.filter(t => {
+          const rawStatus = t.status !== undefined && t.status !== null ? t.status : (t as any).Status;
+          const statusStr = rawStatus.toString().toUpperCase();
+          return statusStr === 'RESOLVED' || statusStr === 'RESUELTO' || rawStatus === 2;
+        });
 
-      console.log('Filtros -> Pendientes:', this.pendingTickets.length, 'En Proceso:', this.inProgressTickets.length, 'Resueltos:', this.resolvedTickets.length);
-    },
-    error: (err) => console.error('Error al obtener los tickets:', err)
-  });
-}
+        console.log('Filtros -> Pendientes:', this.pendingTickets.length, 'En Proceso:', this.inProgressTickets.length, 'Resueltos:', this.resolvedTickets.length);
+
+        // Notifica explícitamente a Angular que refresque la plantilla
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Error al obtener los tickets:', err)
+    });
+  }
+
   onDrop(event: CdkDragDrop<Ticket[]>, targetStatus: 'PENDING' | 'IN_PROGRESS' | 'RESOLVED'): void {
     if (event.previousContainer === event.container) {
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
     } else {
       const ticket = event.previousContainer.data[event.previousIndex];
       
-      // Pedir comentario obligatorio / opcional al usuario
       const commentPrompt = prompt(`Ingresa un comentario para mover el ticket a ${targetStatus}:`);
       
-      // Cancelar si el usuario presiona Cancelar en el prompt
       if (commentPrompt === null) {
         return;
       }
@@ -69,16 +77,13 @@ loadTickets(): void {
 
       this.ticketService.changeStatus(ticket.id, dto).subscribe({
         next: () => {
-          // Transferir el elemento en el cliente tras confirmación 200 OK
           transferArrayItem(
             event.previousContainer.data,
             event.container.data,
             event.previousIndex,
             event.currentIndex
           );
-          // Actualizar propiedad status local del ticket movido
           ticket.status = targetStatus;
-          // Recargar datos para asegurar sincronización con la BD
           this.loadTickets();
         },
         error: (err) => {
