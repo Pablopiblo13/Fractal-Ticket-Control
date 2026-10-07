@@ -1,0 +1,83 @@
+<div class="container-fluid p-4">
+  <h2 class="mb-4 text-center fw-bold">Tablero de Control de Mantenimiento</h2>
+
+  <!-- Agrupador principal de Drag & Drop con Grid de Bootstrap -->
+  <div class="row g-3" cdkDropListGroup>
+
+    <!-- Columna: Pendientes -->
+    <div class="col-md-4">
+      <div class="card bg-light border-0 shadow-sm p-3">
+        <h5 class="card-title text-danger mb-3 fw-bold d-flex justify-content-between align-items-center">
+          <span>Pendientes</span>
+          <span class="badge bg-danger rounded-pill">{{ pendingTickets.length }}</span>
+        </h5>
+        
+        <div 
+          cdkDropList 
+          [cdkDropListData]="pendingTickets" 
+          (cdkDropListDropped)="onDrop($event, 'PENDING')"
+          class="kanban-list" 
+          style="min-height: 450px;">
+          
+          <div *ngFor="let ticket of pendingTickets" cdkDrag class="mb-3">
+            <app-ticket-card 
+              [ticket]="ticket" 
+              (cardClick)="onTicketClick($event)">
+            </app-ticket-card>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Columna: En Proceso -->
+    <div class="col-md-4">
+      <div class="card bg-light border-0 shadow-sm p-3">
+        <h5 class="card-title text-warning mb-3 fw-bold d-flex justify-content-between align-items-center">
+          <span>En Proceso</span>
+          <span class="badge bg-warning text-dark rounded-pill">{{ inProgressTickets.length }}</span>
+        </h5>
+        
+        <div 
+          cdkDropList 
+          [cdkDropListData]="inProgressTickets" 
+          (cdkDropListDropped)="onDrop($event, 'IN_PROGRESS')"
+          class="kanban-list" 
+          style="min-height: 450px;">
+          
+          <div *ngFor="let ticket of inProgressTickets" cdkDrag class="mb-3">
+            <app-ticket-card 
+              [ticket]="ticket" 
+              (cardClick)="onTicketClick($event)">
+            </app-ticket-card>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Columna: Resueltos -->
+    <div class="col-md-4">
+      <div class="card bg-light border-0 shadow-sm p-3">
+        <h5 class="card-title text-success mb-3 fw-bold d-flex justify-content-between align-items-center">
+          <span>Resueltos</span>
+          <span class="badge bg-success rounded-pill">{{ resolvedTickets.length }}</span>
+        </h5>
+        
+        <div 
+          cdkDropList 
+          [cdkDropListData]="resolvedTickets" 
+          (cdkDropListDropped)="onDrop($event, 'RESOLVED')"
+          class="kanban-list" 
+          style="min-height: 450px;">
+          
+          <div *ngFor="let ticket of resolvedTickets" cdkDrag class="mb-3">
+            <app-ticket-card 
+              [ticket]="ticket" 
+              (cardClick)="onTicketClick($event)">
+            </app-ticket-card>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
