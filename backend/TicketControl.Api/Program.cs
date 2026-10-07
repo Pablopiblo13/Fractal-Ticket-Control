@@ -24,11 +24,13 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+// Habilitamos Swagger y lo configuramos en la raíz (/) para que funcione en producción en Railway
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "TicketControl API V1");
+    c.RoutePrefix = string.Empty; 
+});
 
 app.UseCors("AllowAngular");
 app.UseAuthorization();
