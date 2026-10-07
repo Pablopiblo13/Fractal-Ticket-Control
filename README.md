@@ -185,28 +185,49 @@ graph TD
     SP1 --> Tables
     SP2 --> Tables
 
+## 🗄️ Database Setup
 
-🗄️ Database Setup
-Run the MySQL scripts located in the /database folder to generate tables and stored procedures:
+Run the MySQL scripts located in the `/database` folder to generate the required tables and stored procedures.
 
-SQL
--- 1. Create Stored Procedure: Create Ticket
+### 1. Create Stored Procedure: Create Ticket
+
+```sql
 DELIMITER //
+
 CREATE PROCEDURE sp_CreateTicket(
     IN p_Title VARCHAR(255),
     IN p_Asset VARCHAR(100),
     IN p_Description TEXT
 )
 BEGIN
-    INSERT INTO TICKETS (Title, Asset, Description, Status, CreatedAt, UpdatedAt)
-    VALUES (p_Title, p_Asset, p_Description, 'PENDING', NOW(), NOW());
-    
+    INSERT INTO TICKETS (
+        Title,
+        Asset,
+        Description,
+        Status,
+        CreatedAt,
+        UpdatedAt
+    )
+    VALUES (
+        p_Title,
+        p_Asset,
+        p_Description,
+        'PENDING',
+        NOW(),
+        NOW()
+    );
+
     SELECT LAST_INSERT_ID() AS TicketId;
 END //
-DELIMITER ;
 
--- 2. Create Stored Procedure: Change Ticket Status
+DELIMITER ;
+```
+
+### 2. Create Stored Procedure: Change Ticket Status
+
+```sql
 DELIMITER //
+
 CREATE PROCEDURE sp_ChangeTicketStatus(
     IN p_TicketId INT,
     IN p_NewStatus VARCHAR(50),
@@ -216,70 +237,162 @@ CREATE PROCEDURE sp_ChangeTicketStatus(
 )
 BEGIN
     DECLARE v_OldStatus VARCHAR(50);
-    
-    SELECT Status INTO v_OldStatus FROM TICKETS WHERE Id = p_TicketId;
-    
-    UPDATE TICKETS 
-    SET Status = p_NewStatus, 
-        AssignedTo = p_AssignedTo, 
+
+    SELECT Status
+    INTO v_OldStatus
+    FROM TICKETS
+    WHERE Id = p_TicketId;
+
+    UPDATE TICKETS
+    SET
+        Status = p_NewStatus,
+        AssignedTo = p_AssignedTo,
         EvidencePath = COALESCE(p_EvidencePath, EvidencePath),
         UpdatedAt = NOW()
     WHERE Id = p_TicketId;
-    
-    INSERT INTO TICKET_HISTORIES (TicketId, PreviousStatus, NewStatus, AssignedTo, Comment, EvidencePath, CreatedAt)
-    VALUES (p_TicketId, v_OldStatus, p_NewStatus, p_AssignedTo, p_Comment, p_EvidencePath, NOW());
+
+    INSERT INTO TICKET_HISTORIES (
+        TicketId,
+        PreviousStatus,
+        NewStatus,
+        AssignedTo,
+        Comment,
+        EvidencePath,
+        CreatedAt
+    )
+    VALUES (
+        p_TicketId,
+        v_OldStatus,
+        p_NewStatus,
+        p_AssignedTo,
+        p_Comment,
+        p_EvidencePath,
+        NOW()
+    );
 END //
+
 DELIMITER ;
-🚦 Getting Started (Local Development)
-Prerequisites
-Node.js (v18 or higher)
+```
 
-Angular CLI (npm install -g @angular/cli)
 
-.NET 8 SDK
+# 🚦 Getting Started
 
-MySQL Server 8.0
+Follow the steps below to run the project locally.
 
-Backend Setup (.NET 8)
-Clone the repository:
+## 📋 Prerequisites
 
-Bash
-git clone [https://github.com/Pablopiblo13/fractal-ticket-control.git](https://github.com/Pablopiblo13/fractal-ticket-control.git)
+Make sure you have the following software installed:
+
+* [Node.js](https://nodejs.org/) **v18 or higher**
+* Angular CLI
+* **.NET 8 SDK**
+* **MySQL Server 8.0**
+* Git
+
+### Install Angular CLI
+
+```bash
+npm install -g @angular/cli
+```
+
+---
+
+## ⚙️ Backend Setup (.NET 8)
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/Pablopiblo13/fractal-ticket-control.git
+```
+
+Navigate to the backend directory:
+
+```bash
 cd fractal-ticket-control/backend
-Configure your MySQL connection string in appsettings.json:
+```
 
-JSON
+### 2. Configure the MySQL connection
+
+Open the `appsettings.json` file and configure your MySQL connection string:
+
+```json
 "ConnectionStrings": {
-  "DefaultConnection": "Server=localhost;Database=fractal_db;Uid=root;Pwd=yourpassword;"
+    "DefaultConnection": "Server=localhost;Database=fractal_db;Uid=root;Pwd=yourpassword;"
 }
-Restore dependencies and run the API:
+```
 
-Bash
+> Replace `yourpassword` with your local MySQL password.
+
+### 3. Restore dependencies
+
+```bash
 dotnet restore
+```
+
+### 4. Run the API
+
+```bash
 dotnet run
-Frontend Setup (Angular 17)
-Navigate to the frontend directory:
+```
 
-Bash
+The backend API will start using the configured .NET environment.
+
+---
+
+## 🖥️ Frontend Setup (Angular 17)
+
+Open a new terminal and navigate to the frontend directory:
+
+```bash
 cd ../frontend
-Install dependencies:
+```
 
-Bash
+### 1. Install dependencies
+
+```bash
 npm install
-Run the development server:
+```
 
-Bash
+### 2. Start the development server
+
+```bash
 ng serve
-Open your browser and navigate to http://localhost:4200/.
+```
 
-🌿 Branching Strategy
-This project follows Git Flow:
+### 3. Open the application
 
-main: Production-ready code deployed automatically to Railway.
+Once the Angular development server is running, open your browser and navigate to:
 
-develop: Integration branch for features.
+```text
+http://localhost:4200/
+```
 
-feature/*: Specific topic branches.
+---
 
-📄 License
-Distributed under the MIT License. See LICENSE for more information.
+# 🌿 Branching Strategy
+
+This project follows the **Git Flow** branching model.
+
+| Branch      | Description                                               |
+| ----------- | --------------------------------------------------------- |
+| `main`      | Production-ready code. Automatically deployed to Railway. |
+| `develop`   | Integration branch for completed features.                |
+| `feature/*` | Branches created for specific features or topics.         |
+
+### Example
+
+```bash
+git checkout develop
+
+git checkout -b feature/ticket-management
+```
+
+After completing the feature, create a Pull Request to merge it into `develop`.
+
+---
+
+# 📄 License
+
+This project is distributed under the **MIT License**.
+
+See the [`LICENSE`](LICENSE) file for more information.
