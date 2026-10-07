@@ -1,15 +1,15 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Ticket, CreateTicketDto, ChangeStatusDto, TicketHistory } from '../models/ticket.model';
+import { environment } from '../../environments/environment'; // <-- Importar el environment
+import { Ticket, ChangeStatusDto, TicketHistory } from '../models/ticket.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class TicketService {
-
-
-  private apiUrl = '/api/tickets';
+  // Esto apuntará a 'http://localhost:5133/api/tickets'
+  private apiUrl = `${environment.apiUrl}/tickets`;
 
   constructor(private http: HttpClient) {}
 
@@ -27,7 +27,6 @@ export class TicketService {
       equipment: ticketData.equipment, 
       description: ticketData.description || ''
     };
-
     return this.http.post<Ticket>(this.apiUrl, payload);
   }
 
