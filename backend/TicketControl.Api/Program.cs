@@ -4,7 +4,6 @@ using TicketControl.Api.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<TicketControlContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
@@ -27,6 +26,7 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -34,13 +34,18 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = "swagger"; 
 });
 
-app.UseCors("AllowAngular");
+
+app.UseStaticFiles();
+
 
 app.UseRouting();
 
+
+app.UseCors("AllowAngular");
+
+
 app.UseAuthorization();
 
-app.UseStaticFiles();
 
 app.MapControllers();
 
