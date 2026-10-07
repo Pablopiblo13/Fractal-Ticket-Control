@@ -184,7 +184,8 @@ graph TD
     Controller --> SP2
     SP1 --> Tables
     SP2 --> Tables
-```
+
+
 🗄️ Database Setup
 Run the MySQL scripts located in the /database folder to generate tables and stored procedures:
 
