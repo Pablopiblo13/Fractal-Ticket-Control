@@ -1,0 +1,12 @@
+# AI Prompts Usage Log
+
+Below is a summary of the key prompts used as guidance with AI assistants during the development of the Fractal Ticket Control project:
+
+## 1. Database & Stored Procedures
+- *"Help me design a MySQL relational schema with 1-N integrity between TICKETS and TICKET_HISTORIES, and write stored procedures for ticket creation and status transitions."*
+
+## 2. Backend Architecture (.NET Web API)
+- *"Show me how to structure a clean architecture repository pattern in .NET 8 for handling MySQL stored procedures and returning controlled HTTP status codes (like 400 Bad Request instead of 500)."*
+
+## 3. Frontend Development (Angular)
+- *"How can I implement Angular CDK Drag and Drop across a three-column Kanban board (Pending, In Progress, Resolved) and trigger status update requests to an API?"*
