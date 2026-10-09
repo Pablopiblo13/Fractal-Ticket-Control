@@ -8,7 +8,7 @@ The system features an interactive Kanban board with Drag & Drop functionality, 
 
 ## 🌐 Live Demo / Production URL
 
-* **Frontend App:** https://fractal-ticket-control-production.up.railway.app
+* **Frontend App:** https://fractal-ticket-control-production-f9c7.up.railway.app/
 * **Backend API:** https://glistening-tranquility-production-323a.up.railway.app
 
 ---
