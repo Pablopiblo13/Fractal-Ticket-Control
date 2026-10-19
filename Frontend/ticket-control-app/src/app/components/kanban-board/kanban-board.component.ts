@@ -1,115 +1,289 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+
+import {
+  Component,
+  OnInit,
+  ChangeDetectorRef
+} from '@angular/core';
+
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { CdkDragDrop, DragDropModule, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
+
+import {
+  CdkDragDrop,
+  DragDropModule,
+  moveItemInArray
+} from '@angular/cdk/drag-drop';
+
 import { TicketService } from '../../services/ticket.service';
-import { Ticket, ChangeStatusDto } from '../../models/ticket.model';
+
+import {
+  Ticket,
+  CreateTicketDto,
+  ChangeStatusDto,
+  DeleteTicketDto,
+  TicketStatus
+} from '../../models/ticket.model';
+
 import { TicketCardComponent } from '../ticket-card/ticket-card.component';
 
 @Component({
   selector: 'app-kanban-board',
   standalone: true,
-  imports: [CommonModule, FormsModule, DragDropModule, TicketCardComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    DragDropModule,
+    TicketCardComponent
+  ],
   templateUrl: './kanban-board.component.html',
   styleUrl: './kanban-board.component.scss'
 })
 export class KanbanBoardComponent implements OnInit {
+
+  // Kanban columns
   pendingTickets: Ticket[] = [];
   inProgressTickets: Ticket[] = [];
   resolvedTickets: Ticket[] = [];
 
+  people: string[] = [
+    'Juan Pérez',
+    'María Gómez',
+    'Carlos López'
+  ];
+
+  // Ticket creation
   newTicket = {
     title: '',
     asset: '',
-    description: ''
+    description: '',
+    assignedTo: ''
   };
 
-  
+  // Ticket filters
   filters = {
-    searchText: '', 
-    startDate: '',  
-    endDate: ''     
+    searchText: '',
+    startDate: '',
+    endDate: ''
   };
 
-
+  // Ticket status updates
   isModalOpen = false;
   selectedTicketForStatus: Ticket | null = null;
-  targetStatus: 'PENDING' | 'IN_PROGRESS' | 'RESOLVED' = 'PENDING';
+  targetStatus: TicketStatus = 'PENDING';
   selectedFile: File | null = null;
   pendingDropEvent: CdkDragDrop<Ticket[]> | null = null;
 
   statusForm = {
-    assignedTo: '',
+    changedBy: '',
     comment: ''
   };
 
- 
+  // Ticket soft deletion
+  isDeleteModalOpen = false;
+  selectedTicketForDelete: Ticket | null = null;
+  isDeleting = false;
+
+  deleteForm = {
+    deletedBy: '',
+    reason: ''
+  };
+
+  // Deleted tickets view
+  isTrashOpen = false;
+  isLoadingDeletedTickets = false;
+  deletedTickets: Ticket[] = [];
+
+  // Validation alerts
   showValidationAlert = false;
   validationAlertMessage = '';
 
   constructor(
     private ticketService: TicketService,
-    private cdr: ChangeDetectorRef 
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
     this.loadTickets();
   }
 
+  // Ticket queries
   loadTickets(): void {
     this.ticketService.getTickets().subscribe({
       next: (data) => {
-        const normalizedTickets = data.map(t => ({
-          ...t,
-          createdAt: t.createdAt || (t as any).created_at || (t as any).CreatedAt || new Date()
-        }));
+        const normalizedTickets: Ticket[] = data.map(t => {
+          const raw = t as any;
 
-        this.pendingTickets = normalizedTickets.filter(t => {
-          const rawStatus = t.status !== undefined && t.status !== null ? t.status : (t as any).Status;
-          const statusStr = rawStatus.toString().toUpperCase();
-          return statusStr === 'PENDING' || statusStr === 'PENDIENTE' || rawStatus === 0;
+          const rawStatus =
+            t.status ?? raw.Status ?? 'PENDING';
+
+          const statusText = String(rawStatus)
+            .toUpperCase()
+            .trim();
+
+          let status: TicketStatus = 'PENDING';
+
+          if (
+            statusText === 'IN_PROGRESS' ||
+            statusText === 'INPROGRESS' ||
+            statusText === 'EN PROCESO' ||
+            statusText === '1'
+          ) {
+            status = 'IN_PROGRESS';
+          } else if (
+            statusText === 'RESOLVED' ||
+            statusText === 'RESUELTO' ||
+            statusText === '2'
+          ) {
+            status = 'RESOLVED';
+          }
+
+          return {
+            ...t,
+            status,
+            createdAt:
+              t.createdAt ||
+              raw.created_at ||
+              raw.CreatedAt ||
+              new Date(),
+            createdBy:
+              t.createdBy ??
+              raw.CreatedBy ??
+              null,
+            assignedTo:
+              t.assignedTo ??
+              raw.AssignedTo ??
+              null
+          };
         });
 
-        this.inProgressTickets = normalizedTickets.filter(t => {
-          const rawStatus = t.status !== undefined && t.status !== null ? t.status : (t as any).Status;
-          const statusStr = rawStatus.toString().toUpperCase();
-          return statusStr === 'IN_PROGRESS' || statusStr === 'INPROGRESS' || statusStr === 'EN PROCESO' || rawStatus === 1;
-        });
+        const activeTickets = normalizedTickets.filter(
+          t => !t.isDeleted
+        );
 
-        this.resolvedTickets = normalizedTickets.filter(t => {
-          const rawStatus = t.status !== undefined && t.status !== null ? t.status : (t as any).Status;
-          const statusStr = rawStatus.toString().toUpperCase();
-          return statusStr === 'RESOLVED' || statusStr === 'RESUELTO' || rawStatus === 2;
-        });
+        this.pendingTickets = activeTickets.filter(
+          t => t.status === 'PENDING'
+        );
+
+        this.inProgressTickets = activeTickets.filter(
+          t => t.status === 'IN_PROGRESS'
+        );
+
+        this.resolvedTickets = activeTickets.filter(
+          t => t.status === 'RESOLVED'
+        );
 
         this.cdr.detectChanges();
       },
-      error: (err) => console.error('Error al obtener los tickets:', err)
+
+      error: (err) => {
+        console.error('Error loading tickets:', err);
+
+        this.showAlert(
+          'No se pudieron cargar los tickets.'
+        );
+      }
     });
   }
 
- 
-  private applyFilter(tickets: Ticket[]): Ticket[] {
-    return tickets.filter(ticket => {
-      
-      const searchLower = this.filters.searchText.toLowerCase().trim();
-      const matchesTitle = ticket.title ? ticket.title.toLowerCase().includes(searchLower) : false;
-      const matchesEquipment = ticket.equipment ? ticket.equipment.toLowerCase().includes(searchLower) : false;
-      const matchesSearch = !searchLower || matchesTitle || matchesEquipment;
+  // Deleted ticket queries
+  openTrash(): void {
+    this.isTrashOpen = true;
+    this.isLoadingDeletedTickets = true;
+    this.deletedTickets = [];
 
-  
+    this.cdr.detectChanges();
+
+    this.ticketService.getDeletedTickets().subscribe({
+      next: (tickets) => {
+        if (!this.isTrashOpen) {
+          return;
+        }
+
+        this.deletedTickets = tickets;
+        this.isLoadingDeletedTickets = false;
+        this.cdr.detectChanges();
+      },
+
+      error: (err) => {
+        console.error('Error loading deleted tickets:', err);
+
+        this.isLoadingDeletedTickets = false;
+
+        if (this.isTrashOpen) {
+          this.showAlert(
+            'No se pudieron cargar los tickets eliminados.'
+          );
+        }
+      }
+    });
+  }
+
+  closeTrash(): void {
+    this.isTrashOpen = false;
+    this.isLoadingDeletedTickets = false;
+    this.deletedTickets = [];
+    this.cdr.detectChanges();
+  }
+
+  // Ticket filters
+  private applyFilter(tickets: Ticket[]): Ticket[] {
+    const searchLower = this.filters.searchText
+      .toLowerCase()
+      .trim();
+
+    return tickets.filter(ticket => {
+      const matchesTitle = (ticket.title ?? '')
+        .toLowerCase()
+        .includes(searchLower);
+
+      const matchesEquipment = (ticket.equipment ?? '')
+        .toLowerCase()
+        .includes(searchLower);
+
+      const matchesCreator = (ticket.createdBy ?? '')
+        .toLowerCase()
+        .includes(searchLower);
+
+      const matchesAssignee = (ticket.assignedTo ?? '')
+        .toLowerCase()
+        .includes(searchLower);
+
+      const matchesId = String(ticket.id)
+        .includes(searchLower);
+
+      const matchesSearch =
+        !searchLower ||
+        matchesTitle ||
+        matchesEquipment ||
+        matchesCreator ||
+        matchesAssignee ||
+        matchesId;
+
       let matchesDate = true;
+
       if (ticket.createdAt) {
-        const ticketDate = new Date(ticket.createdAt).getTime();
-        
+        const ticketDate = new Date(
+          ticket.createdAt
+        ).getTime();
+
         if (this.filters.startDate) {
-          const start = new Date(this.filters.startDate).setHours(0, 0, 0, 0);
-          if (ticketDate < start) matchesDate = false;
+          const start = new Date(
+            this.filters.startDate
+          ).setHours(0, 0, 0, 0);
+
+          if (ticketDate < start) {
+            matchesDate = false;
+          }
         }
 
         if (this.filters.endDate) {
-          const end = new Date(this.filters.endDate).setHours(23, 59, 59, 999);
-          if (ticketDate > end) matchesDate = false;
+          const end = new Date(
+            this.filters.endDate
+          ).setHours(23, 59, 59, 999);
+
+          if (ticketDate > end) {
+            matchesDate = false;
+          }
         }
       }
 
@@ -137,65 +311,151 @@ export class KanbanBoardComponent implements OnInit {
     };
   }
 
-  // --- CREACIÓN DE TICKET ---
+  // Ticket creation
   onCreateTicket(): void {
-    if (!this.newTicket.title.trim() || !this.newTicket.asset.trim()) {
-      this.validationAlertMessage = '❌ Tiene que completar el formulario';
-      this.showValidationAlert = true;
+    if (
+      !this.newTicket.title.trim() ||
+      !this.newTicket.asset.trim()
+    ) {
+      this.showAlert(
+        'Debes completar el título y el equipo.'
+      );
       return;
     }
 
-    const ticketPayload = {
-      title: this.newTicket.title,
-      equipment: this.newTicket.asset, 
-      description: this.newTicket.description
+    if (!this.newTicket.assignedTo.trim()) {
+      this.showAlert(
+        'Debes seleccionar la persona encargada.'
+      );
+      return;
+    }
+
+    const ticketPayload: CreateTicketDto = {
+      title: this.newTicket.title.trim(),
+      equipment: this.newTicket.asset.trim(),
+      description: this.newTicket.description.trim(),
+      assignedTo: this.newTicket.assignedTo
     };
 
-    this.ticketService.createTicket(ticketPayload).subscribe({
+    this.ticketService.createTicket(
+      ticketPayload
+    ).subscribe({
       next: () => {
-        this.newTicket = { title: '', asset: '', description: '' };
-        this.loadTickets(); 
+        this.newTicket = {
+          title: '',
+          asset: '',
+          description: '',
+          assignedTo: ''
+        };
+
+        this.loadTickets();
       },
+
       error: (err) => {
-        console.error('Error al crear ticket:', err);
-        this.validationAlertMessage = '❌ Ocurrió un error al intentar crear el ticket';
-        this.showValidationAlert = true;
+        console.error('Error creating ticket:', err);
+
+        this.showAlert(
+          'No se pudo crear el ticket. Revisa la conexión con el backend.'
+        );
       }
     });
   }
 
+  // Validation alerts
   closeValidationAlert(): void {
     this.showValidationAlert = false;
+    this.validationAlertMessage = '';
+    this.cdr.detectChanges();
   }
 
+  private showAlert(message: string): void {
+    this.validationAlertMessage = message;
+    this.showValidationAlert = true;
+    this.cdr.detectChanges();
+  }
+
+  // Ticket drag and drop
   onDrop(event: CdkDragDrop<Ticket[]>): void {
-    if (event.previousContainer === event.container) {
-      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+    if (
+      event.previousContainer === event.container
+    ) {
+      moveItemInArray(
+        event.container.data,
+        event.previousIndex,
+        event.currentIndex
+      );
+
       return;
     }
 
-    const target = this.getColumnStatus(event.container.id);
-    const ticket = event.previousContainer.data[event.previousIndex];
+    const target = this.getColumnStatus(
+      event.container.id
+    );
 
-    this.pendingDropEvent = event;
+    const ticket =
+      event.previousContainer.data[
+        event.previousIndex
+      ];
+
+    if (!ticket) {
+      return;
+    }
+
+    const validTransition =
+      (
+        ticket.status === 'PENDING' &&
+        target === 'IN_PROGRESS'
+      ) ||
+      (
+        ticket.status === 'IN_PROGRESS' &&
+        target === 'RESOLVED'
+      );
+
+    if (!validTransition) {
+      this.showAlert(
+        'Transición no permitida. Debes avanzar de Pendiente a En proceso y luego a Resuelto.'
+      );
+
+      return;
+    }
+
+    this.openStatusModal(
+      ticket,
+      target,
+      event
+    );
+  }
+
+  // Status update modal
+  private openStatusModal(
+    ticket: Ticket,
+    target: TicketStatus,
+    dropEvent: CdkDragDrop<Ticket[]> | null = null
+  ): void {
+    this.pendingDropEvent = dropEvent;
     this.selectedTicketForStatus = ticket;
     this.targetStatus = target;
-    this.statusForm = { assignedTo: '', comment: '' };
+
+    this.statusForm = {
+      changedBy: '',
+      comment: ''
+    };
+
     this.selectedFile = null;
     this.isModalOpen = true;
   }
 
-  onFileSelected(event: any): void {
-    const file = event.target.files[0];
-    if (file) {
-      this.selectedFile = file;
-    }
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+
+    this.selectedFile =
+      input.files && input.files.length > 0
+        ? input.files[0]
+        : null;
   }
 
   isResolvedStatus(): boolean {
-    if (!this.targetStatus) return false;
-    const status = this.targetStatus.toString().toUpperCase();
-    return status === 'RESOLVED' || status === 'RESUELTO';
+    return this.targetStatus === 'RESOLVED';
   }
 
   closeModal(): void {
@@ -203,60 +463,191 @@ export class KanbanBoardComponent implements OnInit {
     this.pendingDropEvent = null;
     this.selectedTicketForStatus = null;
     this.selectedFile = null;
+
+    this.statusForm = {
+      changedBy: '',
+      comment: ''
+    };
   }
 
   confirmStatusChange(): void {
-    if (!this.selectedTicketForStatus || !this.pendingDropEvent) return;
+    if (!this.selectedTicketForStatus) {
+      return;
+    }
 
-    if (!this.statusForm.assignedTo.trim()) {
-      alert('Por favor selecciona la persona encargada del ticket.');
+    if (!this.statusForm.changedBy.trim()) {
+      this.showAlert(
+        'Selecciona quién realiza el cambio de estado.'
+      );
+
       return;
     }
 
     if (this.isResolvedStatus()) {
       if (!this.statusForm.comment.trim()) {
-        alert('Es obligatorio ingresar una descripción detallada de cómo se resolvió el ticket.');
+        this.showAlert(
+          'Debes explicar cómo se resolvió el ticket.'
+        );
+
         return;
       }
+
       if (!this.selectedFile) {
-        alert('Es obligatorio adjuntar una foto o documento como evidencia para resolver el ticket.');
+        this.showAlert(
+          'Debes seleccionar una evidencia para resolver el ticket.'
+        );
+
         return;
       }
     }
 
     const dto: ChangeStatusDto = {
       newStatus: this.targetStatus,
-      comment: this.statusForm.comment.trim() || 'Cambio realizado desde el tablero Kanban',
-      assignedTo: this.statusForm.assignedTo
+      comment:
+        this.statusForm.comment.trim() ||
+        'Cambio realizado desde el tablero Kanban',
+      changedBy: this.statusForm.changedBy.trim()
     };
 
-    this.ticketService.changeStatus(this.selectedTicketForStatus.id, dto).subscribe({
+    const ticketId =
+      this.selectedTicketForStatus.id;
+
+    this.ticketService.changeStatus(
+      ticketId,
+      dto
+    ).subscribe({
       next: () => {
-        transferArrayItem(
-          this.pendingDropEvent!.previousContainer.data,
-          this.pendingDropEvent!.container.data,
-          this.pendingDropEvent!.previousIndex,
-          this.pendingDropEvent!.currentIndex
-        );
-        this.selectedTicketForStatus!.status = this.targetStatus;
         this.closeModal();
         this.loadTickets();
       },
+
       error: (err) => {
-        alert('Error al cambiar el estado. Transición no permitida por el backend.');
-        console.error('Error de transición:', err);
+        console.error('Error updating ticket status:', err);
+
+        this.showAlert(
+          'No se pudo cambiar el estado. Revisa el backend y los procedimientos de MySQL.'
+        );
       }
     });
   }
 
-  private getColumnStatus(containerId: string): 'PENDING' | 'IN_PROGRESS' | 'RESOLVED' {
+  // Ticket soft deletion
+  openDeleteModal(ticket: Ticket): void {
+    if (this.isDeleting) {
+      return;
+    }
+
+    this.selectedTicketForDelete = ticket;
+
+    this.deleteForm = {
+      deletedBy: '',
+      reason: ''
+    };
+
+    this.isDeleteModalOpen = true;
+    this.cdr.detectChanges();
+  }
+
+  closeDeleteModal(): void {
+    if (this.isDeleting) {
+      return;
+    }
+
+    this.isDeleteModalOpen = false;
+    this.selectedTicketForDelete = null;
+
+    this.deleteForm = {
+      deletedBy: '',
+      reason: ''
+    };
+
+    this.cdr.detectChanges();
+  }
+
+  confirmDelete(): void {
+    if (
+      !this.selectedTicketForDelete ||
+      this.isDeleting
+    ) {
+      return;
+    }
+
+    const deletedBy = this.deleteForm.deletedBy.trim();
+    const reason = this.deleteForm.reason.trim();
+
+    if (!deletedBy) {
+      this.showAlert(
+        'Debes seleccionar quién elimina el ticket.'
+      );
+
+      return;
+    }
+
+    if (!reason) {
+      this.showAlert(
+        'Debes ingresar el motivo de eliminación.'
+      );
+
+      return;
+    }
+
+    const dto: DeleteTicketDto = {
+      deletedBy,
+      reason
+    };
+
+    const ticketId = this.selectedTicketForDelete.id;
+
+    this.isDeleting = true;
+
+    this.ticketService.deleteTicket(
+      ticketId,
+      dto
+    ).subscribe({
+      next: () => {
+        this.isDeleting = false;
+        this.closeDeleteModal();
+        this.loadTickets();
+      },
+
+      error: (err) => {
+        this.isDeleting = false;
+
+        console.error('Error deleting ticket:', err);
+
+        this.showAlert(
+          err.error?.message ||
+          'No se pudo eliminar el ticket. Revisa la conexión con el backend.'
+        );
+      }
+    });
+  }
+
+  // Kanban column identification
+  private getColumnStatus(
+    containerId: string
+  ): TicketStatus {
     const id = containerId.toLowerCase();
-    if (id.includes('1') || id.includes('progress') || id.includes('proceso')) return 'IN_PROGRESS';
-    if (id.includes('2') || id.includes('resolved') || id.includes('resuelto')) return 'RESOLVED';
+
+    if (
+      id.includes('progress') ||
+      id.includes('proceso')
+    ) {
+      return 'IN_PROGRESS';
+    }
+
+    if (
+      id.includes('resolved') ||
+      id.includes('resuelto')
+    ) {
+      return 'RESOLVED';
+    }
+
     return 'PENDING';
   }
 
+  // Ticket selection
   onTicketClick(ticket: Ticket): void {
-    console.log('Ticket seleccionado:', ticket);
+    this.openDeleteModal(ticket);
   }
 }
